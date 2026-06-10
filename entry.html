@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMC Data Entry — BPCL Bina P04</title>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;min-height:100vh}
+.topbar{background:#0f2d1f;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar-title{color:#fff;font-size:15px;font-weight:600}
+.topbar-sub{color:#86efac;font-size:11px;margin-top:2px}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-conn{background:#166534;color:#bbf7d0}
+.badge-dis{background:#7f1d1d;color:#fecaca}
+.container{max-width:780px;margin:32px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:28px;margin-bottom:20px}
+.card-title{font-size:16px;font-weight:700;color:#0f2d1f;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.sl-badge{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:#f8fafc;padding:4px;border-radius:10px}
+.tab{padding:8px 16px;border-radius:8px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;color:#64748b;transition:all .15s}
+.tab.active{background:#fff;color:#0f2d1f;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.section{display:none}.section.active{display:block}
+.grid{display:grid;gap:16px;margin-bottom:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+label{font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px}
+.req{color:#dc2626}
+input,select{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;color:#1e293b;background:#fff;transition:border .15s}
+input:focus,select:focus{outline:none;border-color:#0f2d1f;box-shadow:0 0 0 3px rgba(15,45,31,.08)}
+.inr{position:relative}
+.inr .pfx{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px}
+.inr input{padding-left:24px}
+.fld{position:relative}
+.fld.invalid input,.fld.invalid select{border-color:#dc2626}
+.errtxt{display:none;font-size:11px;color:#dc2626;margin-top:4px}
+.fld.invalid .errtxt{display:block}
+.calc{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:14px;color:#1e293b;font-weight:600;min-height:40px}
+.calc.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+.calc.warn{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.calc.danger{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.calc-hint{font-size:10px;color:#94a3b8;margin-top:4px}
+.partial-row{display:none;margin-bottom:16px}
+.partial-row.show{display:block}
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9}
+.btn{padding:10px 24px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .15s}
+.btn-clear{background:#f8fafc;color:#64748b;border:1.5px solid #e2e8f0}
+.btn-clear:hover{background:#f1f5f9}
+.btn-save{background:#0f2d1f;color:#fff;display:flex;align-items:center;gap:8px}
+.btn-save:hover{background:#1a3d2b}
+.btn-save:disabled{background:#9ca3af;cursor:not-allowed}
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15);transform:translateY(20px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#0f2d1f;color:#bbf7d0}
+.toast.error{background:#7f1d1d;color:#fecaca}
+.signin-overlay{position:fixed;inset:0;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.signin-box{background:#fff;border-radius:16px;padding:40px;text-align:center;max-width:360px;width:90%}
+.signin-logo{font-size:28px;font-weight:800;color:#0f2d1f;margin-bottom:8px}
+.signin-sub{font-size:13px;color:#64748b;margin-bottom:24px}
+.btn-signin{background:#0f2d1f;color:#fff;padding:12px 32px;border-radius:8px;border:none;cursor:pointer;font-size:15px;font-weight:600;width:100%}
+</style>
+</head>
+<body>
+
+<div id="signin-overlay" class="signin-overlay">
+  <div class="signin-box">
+    <div class="signin-logo">PMC Portal</div>
+    <div class="signin-sub">BPCL Bina · Project P04<br>Sign in with your Elan Energy account</div>
+    <button class="btn-signin" onclick="signIn()">Sign in with Microsoft</button>
+  </div>
+</div>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">PMC Data Entry — BPCL Bina P04</div>
+    <div class="topbar-sub">Elan Energy India · SharePoint Live</div>
+  </div>
+  <span id="conn-badge" class="badge badge-dis">Not connected</span>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('expense',this)">Expense</button>
+    <button class="tab" onclick="switchTab('invoice',this)">Invoice</button>
+    <button class="tab" onclick="switchTab('cab',this)">Cab KM</button>
+  </div>
+
+  <!-- EXPENSE TAB -->
+  <div id="sec-expense" class="section active">
+    <div class="card">
+      <div class="card-title">New Expense Entry <span class="sl-badge" id="sl-expense">SL · —</span></div>
+      <div class="grid g2">
+        <div class="fld" id="fe-date">
+          <label>Date <span class="req">*</span></label>
+          <input type="date" id="exp-date">
+          <div class="errtxt">Date is required</div>
+        </div>
+        <div class="fld" id="fe-head">
+          <label>Expense Head <span class="req">*</span></label>
+          <select id="exp-head" onchange="updateExpCat()">
+            <option value="">— Select —</option>
+          </select>
+          <div class="errtxt">Select expense head</div>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="fld" id="fe-desc">
+          <label>Description <span class="req">*</span></label>
+          <input type="text" id="exp-desc" placeholder="e.g. TA/DA from 01/06 to 05/06 — Naveen">
+          <div class="errtxt">Description is required</div>
+        </div>
+        <div class="fld">
+          <label>Expense Category (auto)</label>
+          <input type="text" id="exp-cat" readonly style="background:#f8fafc;color:#64748b">
+        </div>
+      </div>
+      <div class="grid g3">
+        <div class="fld" id="fe-amt">
+          <label>Amount (₹) <span class="req">*</span></label>
+          <div class="inr"><span class="pfx">₹</span><input type="number" id="exp-amount" placeholder="0" min="1"></div>
+          <div class="errtxt">Enter amount</div>
+        </div>
+        <div class="fld">
+          <label>Voucher Ref</label>
+          <input type="text" id="exp-voucher" placeholder="e.g. Claim 1229">
+        </div>
+        <div class="fld" id="fe-by">
+          <label>Entered By <span class="req">*</span></label>
+          <select id="exp-by">
+            <option value="">— Select —</option>
+          </select>
+          <div class="errtxt">Select person</div>
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn btn-clear" onclick="clearForm()">Clear form</button>
+        <button class="btn btn-save" id="save-btn-expense" onclick="saveEntry('expense')" disabled>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 13 4 10"></polyline><polyline points="9 13 4 21 20 3"></polyline></svg>
+          Save to SharePoint
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVOICE TAB -->
+  <div id="sec-invoice" class="section">
+    <div class="card">
+      <div class="card-title">New Income Invoice <span class="sl-badge" id="sl-invoice">SL · —</span></div>
+      <div class="grid g2">
+        <div class="fld" id="fi-date">
+          <label>Invoice Date <span class="req">*</span></label>
+          <input type="date" id="inv-date">
+          <div class="errtxt">Date is required</div>
+        </div>
+        <div class="fld" id="fi-ref">
+          <label>Invoice Reference <span class="req">*</span></label>
+          <input type="text" id="inv-ref" placeholder="e.g. EG/029/25-26">
+          <div class="errtxt">Reference is required</div>
+        </div>
+      </div>
+      <div class="grid g3">
+        <div class="fld" id="fi-val">
+          <label>Invoice Value (₹) <span class="req">*</span></label>
+          <div class="inr"><span class="pfx">₹</span><input type="number" id="inv-val" placeholder="0" min="1" oninput="calcInvoice()"></div>
+          <div class="errtxt">Enter invoice value</div>
+        </div>
+        <div class="fld">
+          <label>Category</label>
+          <select id="inv-cat">
+            <option>Invoice</option><option>Advance</option><option>Retention Release</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Payment Status</label>
+          <select id="inv-status" onchange="calcInvoice()">
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+            <option value="Partial">Partially Paid</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid g3">
+        <div class="fld">
+          <label>IT TDS @ 10% (Auto)</label>
+          <div class="calc" id="tds-val">—</div>
+          <div class="calc-hint">= (value ÷ 1.18) × 10%</div>
+        </div>
+        <div class="fld">
+          <label>GST TDS @ 2% (Auto)</label>
+          <div class="calc" id="gst-val">—</div>
+          <div class="calc-hint">= (value ÷ 1.18) × 2%</div>
+        </div>
+        <div class="fld">
+          <label>Payment Received (Auto)</label>
+          <div class="calc" id="pay-val">—</div>
+          <div class="calc-hint" id="pay-hint">= value − TDS − GST TDS</div>
+        </div>
+      </div>
+      <!-- Partial payment input — only shown when status = Partially Paid -->
+      <div class="partial-row" id="partial-row">
+        <div class="grid g2">
+          <div class="fld">
+            <label>Amount Actually Received (₹) <span class="req">*</span></label>
+            <div class="inr"><span class="pfx">₹</span><input type="number" id="inv-partial-amt" placeholder="0" min="0" oninput="calcInvoice()"></div>
+            <div class="calc-hint">Enter the amount BPCL actually paid so far</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div class="fld">
+          <label>Balance Receivable (Auto)</label>
+          <div class="calc ok" id="bal-val">—</div>
+          <div class="calc-hint" id="bal-hint">= value − TDS − GST TDS − payment received</div>
+        </div>
+        <div class="fld">
+          <label>Remarks</label>
+          <input type="text" id="inv-remarks" placeholder="e.g. NEFT ref 12345 · 01/03/2026">
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn btn-clear" onclick="clearForm()">Clear form</button>
+        <button class="btn btn-save" id="save-btn-invoice" onclick="saveEntry('invoice')" disabled>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 13 4 10"></polyline><polyline points="9 13 4 21 20 3"></polyline></svg>
+          Save to SharePoint
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAB KM TAB -->
+  <div id="sec-cab" class="section">
+    <div class="card">
+      <div class="card-title">Cab KM Entry <span class="sl-badge" id="sl-cab">SL · —</span></div>
+      <div class="grid g3">
+        <div class="fld" id="fc-month">
+          <label>Month <span class="req">*</span></label>
+          <input type="month" id="cab-month">
+          <div class="errtxt">Month is required</div>
+        </div>
+        <div class="fld" id="fc-vehicle">
+          <label>Vehicle Type <span class="req">*</span></label>
+          <select id="cab-vehicle">
+            <option>Swift Cab</option><option>Innova</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fld" id="fc-actual">
+          <label>Actual KM <span class="req">*</span></label>
+          <input type="number" id="cab-actual" placeholder="0" min="0">
+          <div class="errtxt">Enter actual KM</div>
+        </div>
+      </div>
+      <div class="grid g3">
+        <div class="fld" id="fc-desired">
+          <label>Target KM <span class="req">*</span></label>
+          <input type="number" id="cab-desired" placeholder="0" min="0">
+          <div class="errtxt">Enter target KM</div>
+        </div>
+        <div class="fld">
+          <label>Invoice Ref</label>
+          <input type="text" id="cab-inv-ref" placeholder="e.g. INV-001">
+        </div>
+        <div class="fld" id="fc-cost">
+          <label>Monthly Cost (₹) <span class="req">*</span></label>
+          <div class="inr"><span class="pfx">₹</span><input type="number" id="cab-cost" placeholder="0" min="0"></div>
+          <div class="errtxt">Enter cost</div>
+        </div>
+      </div>
+      <div class="footer">
+        <button class="btn btn-clear" onclick="clearForm()">Clear form</button>
+        <button class="btn btn-save" id="save-btn-cab" onclick="saveEntry('cab')" disabled>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 13 4 10"></polyline><polyline points="9 13 4 21 20 3"></polyline></svg>
+          Save to SharePoint
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const CONFIG = {
+  clientId: 'cca66a21-2c5b-455c-bff6-009f2877849c',
+  tenantId: 'f7dda424-934f-4492-91d0-9eff9f6b4ff3',
+  driveId:  'b!lwSJs3g0SU-eJPxpXLyBQY-LeEFYrGxFj8s5iYGGS57bRR6p1guPRb0ucPoLeK4c',
+  fileId:   '017HLDFZY6SWLNTUNOVRBI2UG5YNSZGQG3',
+};
+const SITE_ID = 'elanenergyindia.sharepoint.com,b3890497-3478-4f49-9e24-fc695cbc8141,41788b8f-ac58-456c-8fcb-398981864b9e';
+
+let msalApp = null, accessToken = null;
+let currentSL = {expense: 1, invoice: 1, cab: 1};
+
+const CAT_MAP = {
+  'HO SALARIES':'HO Salary','HO TA/DA':'Travel','HO MISC EXPENSES':'Misc',
+  'SITE STAFF SALARIES':'Salary','SITE STAFF ACCOMMODATION':'Accommodation',
+  'SITE STAFF TRAVEL/CAB':'Vehicle','INSPECTION EXPENSES':'Inspection',
+  'THIRD PARTY SERVICES':'Third Party','ASSET PURCHASES':'Asset',
+  'UTILITIES & OTHERS':'Utilities','CONTINGENCY':'Contingency','TAXES':'Tax',
+};
+
+async function initMsal() {
+  msalApp = new msal.PublicClientApplication({
+    auth: {clientId:CONFIG.clientId, tenantId:CONFIG.tenantId,
+      redirectUri: window.location.origin + window.location.pathname},
+    cache: {cacheLocation:'sessionStorage'}
+  });
+  await msalApp.initialize();
+  const accounts = msalApp.getAllAccounts();
+  if (accounts.length > 0) {
+    try {
+      const r = await msalApp.acquireTokenSilent({
+        scopes:['https://graph.microsoft.com/Files.ReadWrite.All'],
+        account: accounts[0]
+      });
+      accessToken = r.accessToken;
+      onSignedIn();
+    } catch(e) { /* silent fail — user will click sign in */ }
+  }
+}
+
+async function signIn() {
+  try {
+    const r = await msalApp.acquireTokenPopup({
+      scopes:['https://graph.microsoft.com/Files.ReadWrite.All']
+    });
+    accessToken = r.accessToken;
+    onSignedIn();
+  } catch(e) { showToast('Sign in failed: '+e.message,'error'); }
+}
+
+async function onSignedIn() {
+  document.getElementById('signin-overlay').style.display='none';
+  document.getElementById('conn-badge').textContent='Connected';
+  document.getElementById('conn-badge').className='badge badge-conn';
+  document.querySelectorAll('.btn-save').forEach(b => b.disabled=false);
+  await Promise.all([loadExpenseHeads(), loadEmployees(), loadNextSL()]);
+}
+
+async function graphFetch(sheetName) {
+  const base = `https://graph.microsoft.com/v1.0/sites/${SITE_ID}/drives/${CONFIG.driveId}/items/${CONFIG.fileId}/workbook/worksheets('${encodeURIComponent(sheetName)}')`;
+  const r = await fetch(`${base}/usedRange(valuesOnly=true)`,
+    {headers:{'Authorization':'Bearer '+accessToken}});
+  if (!r.ok) throw new Error('Fetch failed '+r.status);
+  const d = await r.json();
+  const rows = (d.values||[]);
+  // Find real header row
+  const KW = ['sl_no','date','amount','expense_head','employee_id','month_date','actual_km'];
+  let hi = 0;
+  for (let i=0;i<Math.min(5,rows.length);i++) {
+    const t = rows[i].map(c=>String(c||'').toLowerCase()).join('|');
+    if (KW.some(k=>t.includes(k))) { hi=i; break; }
+  }
+  return rows.slice(hi+1).filter(r=>r.some(c=>c!==null&&c!==''));
+}
+
+async function loadExpenseHeads() {
+  try {
+    const rows = await graphFetch('12_Expense_Head_Master');
+    const sel = document.getElementById('exp-head');
+    rows.forEach(r => {
+      if (r[0] && String(r[0]).trim()) {
+        const o = document.createElement('option');
+        o.value = String(r[0]).trim();
+        o.textContent = String(r[0]).trim();
+        sel.appendChild(o);
+      }
+    });
+  } catch(e) { console.error('loadExpenseHeads:',e); }
+}
+
+async function loadEmployees() {
+  try {
+    const rows = await graphFetch('2_Employee_Master');
+    const sel = document.getElementById('exp-by');
+    rows.forEach(r => {
+      if (r[1] && String(r[1]).trim()) {
+        const o = document.createElement('option');
+        o.value = String(r[1]).trim();
+        o.textContent = String(r[1]).trim();
+        sel.appendChild(o);
+      }
+    });
+  } catch(e) { console.error('loadEmployees:',e); }
+}
+
+async function loadNextSL() {
+  try {
+    const expRows = await graphFetch('8_Expense_Transactions');
+    const invRows = await graphFetch('7_Income_Invoices');
+    const cabRows = await graphFetch('9_Cab_KM_Tracker');
+    const lastSL = rows => rows.reduce((max,r) => {
+      const n = parseInt(r[0]); return (!isNaN(n)&&n>max)?n:max;
+    }, 0);
+    currentSL.expense = lastSL(expRows) + 1;
+    currentSL.invoice = lastSL(invRows) + 1;
+    currentSL.cab = cabRows.length + 1;
+    document.getElementById('sl-expense').textContent = 'SL · '+currentSL.expense;
+    document.getElementById('sl-invoice').textContent = 'SL · '+currentSL.invoice;
+    document.getElementById('sl-cab').textContent     = 'SL · '+currentSL.cab;
+  } catch(e) { console.error('loadNextSL:',e); }
+}
+
+function updateExpCat() {
+  const head = document.getElementById('exp-head').value;
+  document.getElementById('exp-cat').value = CAT_MAP[head] || '';
+}
+
+function calcInvoice() {
+  const val    = parseFloat(document.getElementById('inv-val').value) || 0;
+  const status = document.getElementById('inv-status').value;
+  const base   = val / 1.18;
+  const tds    = Math.round(base * 0.10);
+  const gst    = Math.round(base * 0.02);
+  const netPayable = val - tds - gst;
+
+  // Show TDS and GST always
+  document.getElementById('tds-val').textContent = val > 0 ? '₹'+tds.toLocaleString('en-IN') : '—';
+  document.getElementById('gst-val').textContent = val > 0 ? '₹'+gst.toLocaleString('en-IN') : '—';
+
+  // Handle each payment status
+  const partialRow = document.getElementById('partial-row');
+  const payEl   = document.getElementById('pay-val');
+  const balEl   = document.getElementById('bal-val');
+  const payHint = document.getElementById('pay-hint');
+  const balHint = document.getElementById('bal-hint');
+
+  if (status === 'Paid') {
+    // Paid: payment = full net, balance = 0
+    partialRow.classList.remove('show');
+    payEl.textContent  = val > 0 ? '₹'+netPayable.toLocaleString('en-IN') : '—';
+    payHint.textContent = '= value − TDS − GST TDS (fully received)';
+    balEl.textContent  = '₹0 — Fully paid';
+    balEl.className    = 'calc ok';
+    balHint.textContent = '= ₹0 (fully settled)';
+
+  } else if (status === 'Pending') {
+    // Pending: payment = 0, balance = full net
+    partialRow.classList.remove('show');
+    payEl.textContent  = '₹0 — Not yet received';
+    payHint.textContent = '= ₹0 (awaiting payment)';
+    balEl.textContent  = val > 0 ? '₹'+netPayable.toLocaleString('en-IN')+' — Outstanding' : '—';
+    balEl.className    = 'calc danger';
+    balHint.textContent = '= full net amount outstanding';
+
+  } else if (status === 'Partial') {
+    // Partial: show input for actual amount received
+    partialRow.classList.add('show');
+    const partialAmt = parseFloat(document.getElementById('inv-partial-amt').value) || 0;
+    const bal = netPayable - partialAmt;
+    payEl.textContent  = partialAmt > 0 ? '₹'+partialAmt.toLocaleString('en-IN') : '₹0';
+    payHint.textContent = '= amount entered above';
+    balEl.textContent  = val > 0 ? '₹'+Math.max(0,bal).toLocaleString('en-IN')+' — Remaining' : '—';
+    balEl.className    = bal > 0 ? 'calc warn' : 'calc ok';
+    balHint.textContent = '= net payable − amount received';
+  }
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sec-'+tab).classList.add('active');
+}
+
+function clearForm() {
+  document.querySelectorAll('input[type=text],input[type=number],input[type=date],input[type=month]')
+    .forEach(el=>el.value='');
+  document.querySelectorAll('select').forEach(el=>el.selectedIndex=0);
+  document.querySelectorAll('.fld').forEach(f=>f.classList.remove('invalid'));
+  document.getElementById('tds-val').textContent='—';
+  document.getElementById('gst-val').textContent='—';
+  document.getElementById('pay-val').textContent='—';
+  document.getElementById('bal-val').textContent='—';
+  document.getElementById('bal-val').className='calc ok';
+  document.getElementById('partial-row').classList.remove('show');
+  updateExpCat();
+}
+
+function g(id)  { return document.getElementById(id)?.value?.trim() || ''; }
+function gn(id) {
+  const v = parseFloat(String(document.getElementById(id)?.value||'').replace(/[₹$,\s]/g,''));
+  return isNaN(v) ? 0 : v;
+}
+function gCalc(id) {
+  const t = document.getElementById(id)?.textContent || '';
+  const v = parseFloat(t.replace(/[₹,\s]/g,'').replace('—',''));
+  return isNaN(v) ? 0 : v;
+}
+
+function buildRow(tab) {
+  if (tab === 'expense') {
+    return [currentSL.expense,'P04',g('exp-date'),g('exp-desc'),g('exp-voucher'),
+            g('exp-head'),g('exp-cat'),gn('exp-amount'),g('exp-by'),''];
+  }
+  if (tab === 'invoice') {
+    const val    = gn('inv-val');
+    const base   = val / 1.18;
+    const tds    = Math.round(base * 0.10);
+    const gst    = Math.round(base * 0.02);
+    const status = document.getElementById('inv-status').value;
+    let payRec = 0, balance = 0;
+    const netPayable = val - tds - gst;
+
+    if (status === 'Paid') {
+      payRec  = netPayable;
+      balance = 0;
+    } else if (status === 'Pending') {
+      payRec  = 0;
+      balance = netPayable;
+    } else { // Partial
+      payRec  = parseFloat(document.getElementById('inv-partial-amt').value) || 0;
+      balance = Math.max(0, netPayable - payRec);
+    }
+
+    return [currentSL.invoice,'P04',g('inv-date'),g('inv-ref'),g('inv-cat'),
+            val,tds,gst,payRec,balance,g('inv-remarks')];
+  }
+  if (tab === 'cab') {
+    const month = g('cab-month');
+    // Format month as "Mon YYYY" e.g. "Jun 2025"
+    const monthFmt = month ? new Date(month+'-01').toLocaleDateString('en-IN',{month:'short',year:'numeric'}) : '';
+    return ['P04',monthFmt,g('cab-vehicle'),gn('cab-actual'),gn('cab-desired'),
+            gn('cab-desired')-gn('cab-actual'),g('cab-inv-ref'),gn('cab-cost')];
+  }
+  return [];
+}
+
+function validateForm(tab) {
+  let ok = true;
+  const required = {
+    expense: [['exp-date','fe-date'],['exp-head','fe-head'],['exp-desc','fe-desc'],
+              ['exp-amount','fe-amt'],['exp-by','fe-by']],
+    invoice: [['inv-date','fi-date'],['inv-ref','fi-ref'],['inv-val','fi-val']],
+    cab:     [['cab-month','fc-month'],['cab-vehicle','fc-vehicle'],
+              ['cab-actual','fc-actual'],['cab-desired','fc-desired'],['cab-cost','fc-cost']],
+  };
+  (required[tab]||[]).forEach(([inputId, fldId]) => {
+    const v = document.getElementById(inputId)?.value?.trim();
+    const fld = document.getElementById(fldId);
+    if (!v) { fld?.classList.add('invalid'); ok=false; }
+    else     { fld?.classList.remove('invalid'); }
+  });
+  // Extra: partial amount required for Partial status
+  if (tab==='invoice' && document.getElementById('inv-status').value==='Partial') {
+    const pa = document.getElementById('inv-partial-amt').value;
+    if (!pa || parseFloat(pa) <= 0) {
+      showToast('Enter the partial amount received','error'); ok=false;
+    }
+  }
+  return ok;
+}
+
+async function saveEntry(tab) {
+  if (!validateForm(tab)) return;
+  const row = buildRow(tab);
+  if (!row.length) return;
+
+  const sheetMap = {
+    expense: '8_Expense_Transactions',
+    invoice: '7_Income_Invoices',
+    cab:     '9_Cab_KM_Tracker',
+  };
+  const tableMap = {
+    expense: 'tbl_Expenses',
+    invoice: 'tbl_Invoices',
+    cab:     'tbl_CabKM',
+  };
+
+  const btn = document.getElementById('save-btn-'+tab);
+  btn.disabled=true; btn.textContent='Saving…';
+
+  try {
+    const url = `https://graph.microsoft.com/v1.0/sites/${SITE_ID}/drives/${CONFIG.driveId}/items/${CONFIG.fileId}/workbook/tables('${tableMap[tab]}')/rows/add`;
+    const r = await fetch(url, {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body: JSON.stringify({values:[row]})
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err?.error?.message || r.status);
+    }
+    currentSL[tab]++;
+    document.getElementById('sl-'+tab).textContent = 'SL · '+currentSL[tab];
+    showToast('✓ Saved successfully to SharePoint','success');
+    clearForm();
+  } catch(e) {
+    showToast('Save failed: '+e.message,'error');
+  } finally {
+    btn.disabled=false; btn.textContent='Save to SharePoint';
+  }
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+initMsal();
+</script>
+</body>
+</html>
